@@ -1,0 +1,176 @@
+-- //ACCESS THE DATA FROM BIGQUERY//
+
+
+--// OVERVIEW
+
+
+-- Zoom Electric (ZE) is an electric vehicle venture owned by a renowned automotive manufacturer called ZOOM MOTORS India Private Limited.
+
+
+-- As an analyst in the Sales and Operations team at Zoom Electric, your responsibilities include managing pre-orders, facilitating client visits for sales, overseeing website sales, and analyzing website visitor data as well as sales performance.
+
+
+-- Zoom Electric offers a range of automotive and scooter products, including FioNex, Sprint, and Parker, along with some exclusive limited-edition variants.
+
+
+-- Recently, ZE introduced a new scooter model called Sprint in the electric two-wheeler segment. Initially, the sales numbers for Sprint Scooters were quite impressive during the first two weeks of its launch. However, unexpectedly, there was a sudden decline in sales thereafter.//
+
+
+
+
+-- DEEV DRIVE--
+
+
+-- The sales performance of Sprint Scooters exhibited an impressive start during the first two weeks of its launch. However, unexpectedly, there was a sudden decrease in sales by 20%.
+
+
+-- You can examine the daily sales volume data since the launch of Sprint Scooters. The sales volume showed promise during the initial week of release, up until October 17. However, it began to decline steadily thereafter.
+
+
+SELECT *
+      FROM `basic-cabinet-397710.Electric_Vehicle_Sales_Drop.sales`
+      LIMIT 1000
+
+
+-- // FIRST WE WILL ANALYS DATA FOR SPRINT SCOOTER FROM 10/10/2016 TO 31/10/2016//
+
+
+
+
+SELECT customer_id,
+       product_id,
+       sales_transaction_date,
+       date,
+       month,
+       year,
+       channel
+      FROM `basic-cabinet-397710.Electric_Vehicle_Sales_Drop.sales`
+      where month = 'October' and year = 2016 and product_id = 7;
+
+
+
+
+-- // NOW WE HAVE THE DATA FROM SALES, NOW WE WILL CALCULATE SALES VOLUME//
+
+
+SELECT
+    date AS DATES,
+    COUNT(date) AS sales_volume
+FROM
+    `basic-cabinet-397710.Electric_Vehicle_Sales_Drop.sales`
+WHERE
+    month = 'October'
+    AND year = 2016
+    AND product_id = 7
+GROUP BY
+    date;
+
+
+WITH SalesData AS (
+    SELECT
+        date AS DATES,
+        COUNT(date) AS sales_volume
+    FROM
+        `basic-cabinet-397710.Electric_Vehicle_Sales_Drop.sales`
+    WHERE
+        month = 'October'
+        AND year = 2016
+        AND product_id = 7
+    GROUP BY
+        date
+)
+
+
+SELECT
+    DATES,
+    sales_volume,
+    SUM(sales_volume) OVER (
+        ORDER BY DATES
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS cumulative_sales_volume,
+  ((sales_volume - LAG(sales_volume, 1) OVER (ORDER BY DATES)) / LAG(sales_volume, 1) OVER (ORDER BY DATES)) * 100 AS Growth_Percentage
+FROM
+    SalesData
+ORDER BY
+    DATES;
+
+
+-- //* NOW WE HAVE THE DATA TO ANALYSE SALES_VOLUME WITH CUMULATIVE_SALES AND GROWTH%//
+
+
+-- // 1. We create a common table expression (CTE) called SalesData to calculate the daily sales volume.//
+
+
+-- // 2. In the main query, we calculate cumulative_sales_volume using the window function SUM over a rolling 7-day period. The ROWS BETWEEN 6 PRECEDING AND CURRENT ROW specifies the 7-day window.//
+
+
+-- // 3. We calculate Growth_Percentage using the formula you provided, comparing the current day's sales with the previous day's sales.//
+
+
+
+
+
+
+-- // NOW WE ARE GOING TO ANALYS DATA FOR SPRINT LIMITED EDITION DATA FROM FEBRUARY 2017 TO MARCH 2017 (21 DAYS)//
+
+
+
+
+SELECT customer_id,
+       product_id,
+       sales_transaction_date,
+       date,
+       month,
+       year,
+       channel
+      FROM `basic-cabinet-397710.Electric_Vehicle_Sales_Drop.sales`
+      where month = 'February' and year = 2017 and product_id = 8;
+
+
+
+
+-- // NOW WE HAVE THE DATA FROM SALES, NOW WE WILL CALCULATE SALES VOLUME//
+
+
+SELECT
+    date AS DATES,
+    COUNT(date) AS sales_volume
+FROM
+    `basic-cabinet-397710.Electric_Vehicle_Sales_Drop.sales`
+WHERE
+    sales_transaction_date >= '2017-02-15'
+    AND sales_transaction_date <= '2017-03-09'
+    AND product_id = 8
+GROUP BY
+    date
+ORDER BY
+    date;
+
+
+
+WITH SalesData AS (
+    SELECT
+        date AS DATES,
+        COUNT(date) AS sales_volume
+    FROM
+        `basic-cabinet-397710.Electric_Vehicle_Sales_Drop.sales`
+    WHERE
+        sales_transaction_date >= '2017-02-15'
+        AND sales_transaction_date <= '2017-03-09'
+        AND product_id = 8
+    GROUP BY
+        date
+)
+
+SELECT
+     DATES,
+    sales_volume,
+    SUM(sales_volume) OVER (
+        ORDER BY DATES
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS cumulative_sales_volume,
+    ((sales_volume - LAG(sales_volume, 1) OVER (ORDER BY DATES)) / LAG(sales_volume, 1) OVER (ORDER BY DATES)) * 100 AS Growth_Percentage
+FROM
+    SalesData
+ORDER BY
+    DATES;
